@@ -1,3 +1,4 @@
+import { z } from "zod";
 let car: { brand: string; year: number } = { brand: "toyota", year: 2020 };
 console.log(car.brand);
 
@@ -246,25 +247,122 @@ const user = createUser({
 // type assertion
 
 enum Color {
-    Red,
-    Blue,
-    // Green,
+  Red,
+  Blue,
+  // Green,
 }
 
 function getColorName(color: Color) {
-    switch (color) {
-        case Color.Red:
-            return 'Red';
-        case Color.Blue:
-            return 'Blue';
-            default:
-            // at build time
-            let unexpectedColor: never = color;
-            // at runtime
-            throw new Error(`Unexpected color value: ${unexpectedColor}`);
-
-    }
+  switch (color) {
+    case Color.Red:
+      return "Red";
+    case Color.Blue:
+      return "Blue";
+    default:
+      // at build time
+      let unexpectedColor: never = color;
+      // at runtime
+      throw new Error(`Unexpected color value: ${unexpectedColor}`);
+  }
 }
 console.log(getColorName(Color.Red));
 
-//
+// GENERIC CHALLENGE: Filter by Key
+const users = [
+  { name: "ülkü", role: "admin" },
+  { name: "ahmet", role: "user" },
+  { name: "ali", role: "user" },
+];
+
+const admins = filterByProperty(users, "role", "admin");
+console.log(admins);
+
+function filterByProperty<T>(items: T[], key: keyof T, value: T[keyof T]): T[] {
+  return items.filter((item) => item[key] === value);
+}
+
+// fetch api and TS
+
+const url = "https://www.course-api.com/react-tours-project";
+// define a type for the data you're fetching
+type _Tour = {
+  id: string;
+  name: string;
+  info: string;
+  image: string;
+  price: string;
+};
+
+async function _fetchData(url: string): Promise<_Tour[]> {
+  try {
+    const response = await fetch(url);
+
+    // check if the request was successful.
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data: Tour[] = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    const errMsg =
+      error instanceof Error ? error.message : "there was an error...";
+    console.log(errMsg);
+
+    // throw error;
+    return [];
+  }
+}
+
+const _tours = await _fetchData(url);
+_tours.map((tour) => {
+  console.log(tour.name);
+});
+
+//  Zod Runtime
+
+const tourSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  info: z.string(),
+  image: z.string(),
+  price: z.string(),
+  somethign: z.string(),
+});
+
+// extract the inferred type
+type Tour = z.infer<typeof tourSchema>;
+
+async function fetchData(url: string): Promise<Tour[]> {
+  try {
+    const response = await fetch(url);
+
+    // Check if the request was successful.
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const rawData: Tour[] = await response.json();
+    const result = tourSchema.array().safeParse(rawData);
+    if (!result.success) {
+      throw new Error(`Invalid data: ${result.error}`);
+    }
+    return result.data;
+  } catch (error) {
+    const errMsg =
+      error instanceof Error ? error.message : 'there was an error...';
+    console.log(errMsg);
+
+    // throw error;
+    return [];
+  }
+}
+
+const tours = await fetchData(url);
+tours.map((tour) => {
+  console.log(tour.name);
+});
+
+
+
+
